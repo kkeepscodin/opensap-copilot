@@ -44,15 +44,15 @@ Change risks
 
 ```text
 React frontend
-      â
+      |
 FastAPI backend
-      â
+      |
 Prompt and analysis service
-      â
+      |
 LLM provider
-      â
+      |
 Structured JSON
-      â
+      |
 Results dashboard
 ```
 

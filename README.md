@@ -30,9 +30,9 @@ The first release focuses on three capabilities:
 
 ```text
 Upload ABAP source
-        â
+        |
 Analyze
-        â
+        |
 Program purpose
 Business summary
 Tables and dependencies

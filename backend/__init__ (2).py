@@ -1,0 +1,1 @@
+"""OpenSAP Copilot backend package."""

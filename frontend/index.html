@@ -10,9 +10,9 @@
 <main>
   <header>
     <div>
-      <p class="eyebrow">PROJECT NORTH · HYBRID MVP</p>
+      <p class="eyebrow">PROJECT NORTH · PN-043 EVALUATED HYBRID MVP</p>
       <h1>OpenSAP Copilot</h1>
-      <p class="sub">Evidence first. AI second.</p>
+      <p class="sub">Evidence first. AI second. Guardrails always.</p>
     </div>
     <span id="apiStatus" class="pill">Checking API…</span>
   </header>
@@ -25,12 +25,12 @@
 
     <label class="ai-toggle">
       <input id="useAi" type="checkbox">
-      <span>Use AI enrichment</span>
+      <span>Use local AI enrichment (Ollama)</span>
     </label>
 
     <p class="notice">
-      AI mode sends the uploaded source to the configured model provider.
-      Use synthetic or permitted code only.
+      Local AI runs through Ollama on this machine. The source is sent from
+      OpenSAP Copilot only to the local Ollama endpoint.
     </p>
 
     <button id="analyzeBtn">Analyze program</button>
@@ -83,6 +83,11 @@
 
         <h4>Evidence used by AI</h4>
         <div id="aiEvidence"></div>
+
+        <div id="groundingGuard" class="guard" hidden>
+          <h4>Grounding guard</h4>
+          <ul id="groundingNotes"></ul>
+        </div>
       </div>
     </section>
 

@@ -12,7 +12,7 @@ from analyzer import (
 from llm_service import enrich_with_ai
 from models import AnalysisResponse
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 MAX_FILE_SIZE_BYTES = 1_000_000
 ALLOWED_EXTENSIONS = {".abap", ".txt"}
 
@@ -20,7 +20,7 @@ app = FastAPI(
     title="OpenSAP Copilot API",
     description=(
         "Hybrid evidence-grounded ABAP program comprehension MVP with "
-        "optional structured LLM enrichment."
+        "optional private local-LLM enrichment through Ollama."
     ),
     version=APP_VERSION,
 )
@@ -107,7 +107,7 @@ async def analyze(
 
     if ai_analysis.available:
         business_summary = ai_analysis.business_summary or grounded.conclusion
-        analysis_mode = "hybrid-static-plus-llm"
+        analysis_mode = "hybrid-static-plus-local-llm"
     else:
         business_summary = (
             f"{program_name} was analyzed using deterministic static extraction "

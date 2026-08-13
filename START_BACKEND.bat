@@ -23,8 +23,10 @@ python -m pytest -q
 if errorlevel 1 goto :error
 
 echo.
-echo OpenSAP Copilot backend v0.4.0
+echo OpenSAP Copilot backend v0.5.0 - PN-043 Evaluated Local Hybrid
 echo Swagger: http://127.0.0.1:8000/docs
+echo Ollama: http://127.0.0.1:11434
+echo Model: qwen2.5-coder:3b
 echo.
 python -m uvicorn main:app --reload
 exit /b 0

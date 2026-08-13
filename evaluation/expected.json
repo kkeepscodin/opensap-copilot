@@ -1,0 +1,30 @@
+[
+  {
+    "file": "z_inventory_demo.abap",
+    "program_name": "Z_INVENTORY_DEMO",
+    "tables": ["SELECT MARA"],
+    "dependencies": ["BAPI_GOODSMVT_CREATE", "BAPI_TRANSACTION_COMMIT"],
+    "forbidden_unsupported_business_terms": [
+      "inventory adjustment",
+      "inventory adjustments",
+      "transfer",
+      "transfers",
+      "goods receipt",
+      "goods issue"
+    ]
+  },
+  {
+    "file": "z_audit_update_demo.abap",
+    "program_name": "Z_AUDIT_UPDATE_DEMO",
+    "tables": ["SELECT ZAUDIT_DEMO", "UPDATE ZAUDIT_DEMO"],
+    "dependencies": [],
+    "forbidden_unsupported_business_terms": []
+  },
+  {
+    "file": "z_dynamic_call_demo.abap",
+    "program_name": "Z_DYNAMIC_CALL_DEMO",
+    "tables": ["SELECT T001"],
+    "dependencies": [],
+    "forbidden_unsupported_business_terms": []
+  }
+]

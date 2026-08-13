@@ -127,4 +127,15 @@ function renderAi(ai){
   $("aiEvidence").innerHTML = ai.used_evidence
     .map(item => `<span class="pill">${esc(item)}</span>`)
     .join(" ");
+
+  const guard = $("groundingGuard");
+  if(ai.grounding_guard_applied){
+    guard.hidden = false;
+    $("groundingNotes").innerHTML = ai.grounding_notes
+      .map(item => `<li>${esc(item)}</li>`)
+      .join("");
+  }else{
+    guard.hidden = true;
+    $("groundingNotes").innerHTML = "";
+  }
 }

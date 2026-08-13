@@ -26,3 +26,6 @@ button{border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:poin
 .badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 #message{width:100%;margin:0}
 @media(max-width:760px){.grid{grid-template-columns:1fr}header,.hero,.section-heading{align-items:flex-start;flex-direction:column}h1{font-size:34px}.badges{justify-content:flex-start}}
+
+.guard{margin-top:18px;padding:14px 16px;border:1px solid #e3c76a;border-radius:12px;background:#fffaf0}
+.guard h4{margin-top:0}

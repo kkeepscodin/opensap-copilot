@@ -62,6 +62,8 @@ class AIAnalysis(BaseModel):
     change_considerations: list[str] = []
     unknowns: list[str] = []
     used_evidence: list[str] = []
+    grounding_guard_applied: bool = False
+    grounding_notes: list[str] = []
     message: str
 
 

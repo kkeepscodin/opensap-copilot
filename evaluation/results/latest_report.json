@@ -1,0 +1,222 @@
+{
+  "project": "OpenSAP Copilot",
+  "milestone": "PN-043",
+  "generated_at_utc": "2026-08-13T16:42:32.456618+00:00",
+  "cases": [
+    {
+      "file": "z_inventory_demo.abap",
+      "passed": true,
+      "checks": [
+        {
+          "name": "program_name",
+          "passed": true,
+          "detail": "actual=Z_INVENTORY_DEMO"
+        },
+        {
+          "name": "deterministic_tables",
+          "passed": true,
+          "detail": "actual=['SELECT MARA']"
+        },
+        {
+          "name": "deterministic_dependencies",
+          "passed": true,
+          "detail": "actual=['BAPI_GOODSMVT_CREATE', 'BAPI_TRANSACTION_COMMIT']"
+        },
+        {
+          "name": "local_ai_available",
+          "passed": true,
+          "detail": "Local AI enrichment completed with evidence-grounded structured output. A deterministic grounding guard corrected an unsupported interpretation."
+        },
+        {
+          "name": "used_evidence_is_allowlisted",
+          "passed": true,
+          "detail": "used=['SELECT MARA', 'BAPI_GOODSMVT_CREATE', 'BAPI_TRANSACTION_COMMIT']"
+        },
+        {
+          "name": "structured_summaries_present",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "unsupported_scenario_claims_blocked",
+          "passed": true,
+          "detail": "forbidden_found=[]; guard=True"
+        }
+      ],
+      "deterministic_conclusion": "The program performs or participates in an SAP goods-movement workflow.",
+      "deterministic_confidence": "high",
+      "evidence": [
+        "BAPI_GOODSMVT_CREATE",
+        "BAPI_TRANSACTION_COMMIT",
+        "SELECT MARA"
+      ],
+      "ai": {
+        "requested": true,
+        "available": true,
+        "provider": "ollama-local",
+        "model": "qwen2.5-coder:3b",
+        "technical_summary": "Static evidence detected: SELECT MARA; BAPI_GOODSMVT_CREATE; BAPI_TRANSACTION_COMMIT.",
+        "business_summary": "The program performs or participates in an SAP goods-movement workflow. The specific business scenario cannot be established from the supplied static evidence.",
+        "change_considerations": [
+          "Dynamic calls and SQL might not be detected if they are not explicitly included in the source code.",
+          "The program relies on BAPIs for business logic, which could affect its behavior in different SAP environments."
+        ],
+        "unknowns": [
+          "SAP runtime context (e.g., user roles, transaction types)",
+          "Dynamic SQL or calls that are not captured by the provided source code",
+          "The exact goods-movement scenario (for example receipt, issue, transfer, or adjustment) is not established by the supplied static evidence."
+        ],
+        "used_evidence": [
+          "SELECT MARA",
+          "BAPI_GOODSMVT_CREATE",
+          "BAPI_TRANSACTION_COMMIT"
+        ],
+        "grounding_guard_applied": true,
+        "grounding_notes": [
+          "Grounding guard removed unsupported scenario-specific interpretation: goods issue, goods receipt, inventory adjustment, transfer."
+        ],
+        "message": "Local AI enrichment completed with evidence-grounded structured output. A deterministic grounding guard corrected an unsupported interpretation."
+      }
+    },
+    {
+      "file": "z_audit_update_demo.abap",
+      "passed": true,
+      "checks": [
+        {
+          "name": "program_name",
+          "passed": true,
+          "detail": "actual=Z_AUDIT_UPDATE_DEMO"
+        },
+        {
+          "name": "deterministic_tables",
+          "passed": true,
+          "detail": "actual=['SELECT ZAUDIT_DEMO', 'UPDATE ZAUDIT_DEMO']"
+        },
+        {
+          "name": "deterministic_dependencies",
+          "passed": true,
+          "detail": "actual=[]"
+        },
+        {
+          "name": "local_ai_available",
+          "passed": true,
+          "detail": "Local AI enrichment completed with evidence-grounded structured output."
+        },
+        {
+          "name": "used_evidence_is_allowlisted",
+          "passed": true,
+          "detail": "used=['SELECT ZAUDIT_DEMO', 'UPDATE ZAUDIT_DEMO']"
+        },
+        {
+          "name": "structured_summaries_present",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "unsupported_scenario_claims_blocked",
+          "passed": true,
+          "detail": "forbidden_found=[]; guard=False"
+        }
+      ],
+      "deterministic_conclusion": "The program performs custom ABAP data processing over detected SAP objects.",
+      "deterministic_confidence": "medium",
+      "evidence": [
+        "SELECT ZAUDIT_DEMO",
+        "UPDATE ZAUDIT_DEMO"
+      ],
+      "ai": {
+        "requested": true,
+        "available": true,
+        "provider": "ollama-local",
+        "model": "qwen2.5-coder:3b",
+        "technical_summary": "The ABAP program `z_audit_update_demo` performs custom data processing over SAP objects.",
+        "business_summary": "The program updates a specific record in the table `ZAUDIT_DEMO` based on a provided key.",
+        "change_considerations": [
+          "Dynamic SQL and calls may not be detected due to truncation of source code."
+        ],
+        "unknowns": [
+          "SAP runtime context (e.g., transactional data, business rules) was not analyzed."
+        ],
+        "used_evidence": [
+          "SELECT ZAUDIT_DEMO",
+          "UPDATE ZAUDIT_DEMO"
+        ],
+        "grounding_guard_applied": false,
+        "grounding_notes": [],
+        "message": "Local AI enrichment completed with evidence-grounded structured output."
+      }
+    },
+    {
+      "file": "z_dynamic_call_demo.abap",
+      "passed": true,
+      "checks": [
+        {
+          "name": "program_name",
+          "passed": true,
+          "detail": "actual=Z_DYNAMIC_CALL_DEMO"
+        },
+        {
+          "name": "deterministic_tables",
+          "passed": true,
+          "detail": "actual=['SELECT T001']"
+        },
+        {
+          "name": "deterministic_dependencies",
+          "passed": true,
+          "detail": "actual=[]"
+        },
+        {
+          "name": "local_ai_available",
+          "passed": true,
+          "detail": "Local AI enrichment completed with evidence-grounded structured output."
+        },
+        {
+          "name": "used_evidence_is_allowlisted",
+          "passed": true,
+          "detail": "used=['SELECT T001']"
+        },
+        {
+          "name": "structured_summaries_present",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "unsupported_scenario_claims_blocked",
+          "passed": true,
+          "detail": "forbidden_found=[]; guard=False"
+        }
+      ],
+      "deterministic_conclusion": "The program performs custom ABAP data processing over detected SAP objects.",
+      "deterministic_confidence": "medium",
+      "evidence": [
+        "SELECT T001"
+      ],
+      "ai": {
+        "requested": true,
+        "available": true,
+        "provider": "ollama-local",
+        "model": "qwen2.5-coder:3b",
+        "technical_summary": "The ABAP program `z_dynamic_call_demo` performs custom data processing over SAP objects.",
+        "business_summary": "The program uses a dynamic function call to process data from the `t001` table.",
+        "change_considerations": [
+          "Dynamic calls and SQL construction may introduce runtime behavior that is not captured by static analysis."
+        ],
+        "unknowns": [
+          "The specific SAP runtime context (e.g., user, transaction code) was not analyzed."
+        ],
+        "used_evidence": [
+          "SELECT T001"
+        ],
+        "grounding_guard_applied": false,
+        "grounding_notes": [],
+        "message": "Local AI enrichment completed with evidence-grounded structured output."
+      }
+    }
+  ],
+  "summary": {
+    "passed_checks": 21,
+    "total_checks": 21,
+    "score_percent": 100.0,
+    "all_cases_passed": true
+  }
+}

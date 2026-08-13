@@ -1,6 +1,128 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenSAP Copilot</title><link rel="stylesheet" href="styles.css"></head>
-<body><main class="shell"><header><div><span class="eyebrow">OPEN SAP COPILOT · MVP</span><h1>Understand legacy ABAP with evidence.</h1><p>Upload a safe ABAP sample. The local analyzer extracts program intent, SAP objects, execution flow, and change risks.</p></div><span id="status" class="status">Checking API…</span></header>
-<section class="upload"><label id="drop" for="file"><strong>Drop an ABAP file here</strong><span>or click to choose .abap / .txt · max 1 MB</span></label><input id="file" type="file" accept=".abap,.txt"><div class="actions"><span id="filename">No file selected</span><button id="analyze" disabled>Analyze program</button></div><p id="error" class="error"></p></section>
-<section id="results" class="results hidden"><div class="hero"><span class="label">PROGRAM</span><h2 id="program"></h2><p id="purpose"></p><span id="mode" class="chip"></span></div><div class="grid"><article><h3>Business summary</h3><p id="summary"></p></article><article><h3>Tables</h3><div id="tables"></div></article><article><h3>Dependencies</h3><div id="deps"></div></article><article><h3>Execution flow</h3><ol id="flow"></ol></article><article class="wide"><h3>Change risks</h3><div id="risks"></div></article></div></section>
-<footer>Local MVP · Use only synthetic, anonymized, or explicitly permitted source code.</footer></main><script src="app.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OpenSAP Copilot</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <p class="eyebrow">PROJECT NORTH · HYBRID MVP</p>
+      <h1>OpenSAP Copilot</h1>
+      <p class="sub">Evidence first. AI second.</p>
+    </div>
+    <span id="apiStatus" class="pill">Checking API…</span>
+  </header>
+
+  <section class="card upload">
+    <label class="file-label">
+      ABAP source
+      <input id="fileInput" type="file" accept=".abap,.txt">
+    </label>
+
+    <label class="ai-toggle">
+      <input id="useAi" type="checkbox">
+      <span>Use AI enrichment</span>
+    </label>
+
+    <p class="notice">
+      AI mode sends the uploaded source to the configured model provider.
+      Use synthetic or permitted code only.
+    </p>
+
+    <button id="analyzeBtn">Analyze program</button>
+    <p id="message"></p>
+  </section>
+
+  <section id="results" hidden>
+    <section class="card hero">
+      <div>
+        <p class="label">Program</p>
+        <h2 id="programName"></h2>
+      </div>
+      <div class="badges">
+        <span id="confidence" class="pill"></span>
+        <span id="mode" class="pill"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="label">Grounded conclusion</p>
+      <h3 id="conclusion"></h3>
+    </section>
+
+    <section id="aiSection" class="card ai-card" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="label">AI enrichment</p>
+          <h3 id="aiStatus"></h3>
+        </div>
+        <span id="aiModel" class="pill"></span>
+      </div>
+
+      <div id="aiContent" hidden>
+        <h4>Technical summary</h4>
+        <p id="aiTechnical"></p>
+
+        <h4>Business summary</h4>
+        <p id="aiBusiness"></p>
+
+        <div class="grid">
+          <div>
+            <h4>Change considerations</h4>
+            <ul id="aiChanges"></ul>
+          </div>
+          <div>
+            <h4>Unknowns</h4>
+            <ul id="aiUnknowns"></ul>
+          </div>
+        </div>
+
+        <h4>Evidence used by AI</h4>
+        <div id="aiEvidence"></div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <p class="label">Deterministic evidence</p>
+        <div id="evidence"></div>
+      </section>
+
+      <section class="card">
+        <p class="label">Uncertainty</p>
+        <ul id="uncertainty"></ul>
+      </section>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <p class="label">Tables</p>
+        <div id="tables"></div>
+      </section>
+
+      <section class="card">
+        <p class="label">Dependencies</p>
+        <div id="dependencies"></div>
+      </section>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <p class="label">Execution flow</p>
+        <ol id="flow"></ol>
+      </section>
+
+      <section class="card">
+        <p class="label">Risks</p>
+        <div id="risks"></div>
+      </section>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

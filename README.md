@@ -4,7 +4,7 @@
 
 OpenSAP Copilot is an AI-assisted engineering tool that helps developers understand unfamiliar SAP ABAP programs by turning source code into a structured explanation of purpose, business context, tables, call flow, and change risks.
 
-> **Status:** Early MVP development  
+> **Status:** Working MVP - deterministic ABAP analysis, local AI explanation, evaluation harness, and minimal web UI implemented.  
 > **First supported environment:** SAP ABAP  
 > **Goal:** Deliver a focused, working demo for enterprise code understanding.
 
@@ -40,7 +40,7 @@ Call flow
 Change risks
 ```
 
-## Planned Architecture
+## Current Architecture
 
 ```text
 React frontend

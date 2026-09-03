@@ -35,7 +35,7 @@ class RiskItem(BaseModel):
 
 
 
-   class LLMSummaryPayload(BaseModel):
+class LLMSummaryPayload(BaseModel):
     technical_summary: str = Field(
         description="One or two concise technical sentences grounded only in supplied evidence."
     )

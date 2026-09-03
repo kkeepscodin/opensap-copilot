@@ -1,42 +1,41 @@
 import json
 import os
 import re
+import time
 
 import httpx
 
-from models import AIAnalysis, GroundedConclusion, LLMEnrichmentPayload
+from models import AIAnalysis, GroundedConclusion, LLMSummaryPayload
+
 
 SYSTEM_INSTRUCTIONS = """
-You are the local AI enrichment layer of an enterprise program-comprehension tool.
+You are the local explanation layer of an enterprise program-comprehension tool.
 
-Your job is NOT to invent business meaning. Your job is to explain an ABAP
-program using only:
-1. the uploaded source code,
-2. deterministic evidence extracted by the application,
-3. explicit uncertainty supplied by the application.
+A deterministic analyzer has already extracted the technical evidence.
+Do not attempt to rediscover every detail of the full program.
+
+Your task is only to produce:
+1. a concise technical summary,
+2. a concise business-language summary.
 
 Rules:
-- Do not claim a SAP business process unless the supplied code/evidence supports it.
-- Distinguish facts from likely interpretations.
-- Keep summaries concise and useful to a software engineer.
-- Do not expose private chain-of-thought.
-- used_evidence must contain only exact evidence values included in the input.
-- If important runtime/configuration/customizing context is missing, put it in unknowns.
-- Do not suggest that static analysis proves runtime behavior.
-- A generic goods-movement BAPI does NOT prove a specific scenario such as transfer,
-  inventory adjustment, goods receipt, or goods issue. Only name a specific scenario
-  when the supplied source/evidence explicitly establishes it.
-- If a specific movement scenario is not established, say "goods-movement workflow"
-  and list the exact scenario as unknown.
-- Do not convert an uncertainty into a factual statement.
-- Return only data that matches the requested JSON schema.
+- Use only the supplied deterministic evidence, uncertainty, and code excerpt.
+- Do not invent SAP business meaning.
+- Distinguish facts from interpretations.
+- Do not claim runtime behavior from static analysis.
+- A generic goods-movement BAPI does not prove receipt, issue, transfer,
+  or inventory adjustment unless the evidence explicitly establishes it.
+- Keep each summary to one or two short sentences.
+- Return only data matching the requested JSON schema.
 """.strip()
+
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:3b"
-DEFAULT_SOURCE_CHAR_LIMIT = 4000
+DEFAULT_EXCERPT_CHAR_LIMIT = 2400
+MAX_AI_SECONDS = 60.0
 
-# Scenario terms that are too specific to infer from a generic BAPI alone.
+
 _SCENARIO_PATTERNS = {
     "inventory adjustment": r"\binventory\s+adjustments?\b",
     "transfer": r"\btransfers?\b",
@@ -45,49 +44,184 @@ _SCENARIO_PATTERNS = {
 }
 
 
-def _build_user_input(source: str, grounded: GroundedConclusion) -> str:
-    evidence_values = [item.value for item in grounded.evidence]
+def _evidence_keywords(grounded: GroundedConclusion) -> list[str]:
+    keywords: set[str] = set()
 
+    ignored = {
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "MODIFY",
+        "DELETE",
+    }
+
+    for item in grounded.evidence:
+        tokens = re.findall(r"[A-Z][A-Z0-9_/]{2,}", item.value.upper())
+        for token in tokens:
+            if token not in ignored:
+                keywords.add(token)
+
+    return sorted(keywords)
+
+
+def _build_relevant_excerpt(
+    source: str,
+    grounded: GroundedConclusion,
+) -> str:
     try:
-        source_char_limit = int(
-            os.getenv("OLLAMA_SOURCE_CHAR_LIMIT", str(DEFAULT_SOURCE_CHAR_LIMIT))
+        limit = int(
+            os.getenv(
+                "OLLAMA_EXCERPT_CHAR_LIMIT",
+                str(DEFAULT_EXCERPT_CHAR_LIMIT),
+            )
         )
     except ValueError:
-        source_char_limit = DEFAULT_SOURCE_CHAR_LIMIT
+        limit = DEFAULT_EXCERPT_CHAR_LIMIT
 
-    source_char_limit = max(2000, min(source_char_limit, 60000))
+    limit = max(800, min(limit, 5000))
+
+    lines = source.splitlines()
+    keywords = _evidence_keywords(grounded)
+
+    selected_indexes: set[int] = set()
+
+    for index, line in enumerate(lines):
+        upper_line = line.upper()
+
+        if any(keyword in upper_line for keyword in keywords):
+            start = max(0, index - 2)
+            end = min(len(lines), index + 3)
+
+            for nearby in range(start, end):
+                selected_indexes.add(nearby)
+
+    if selected_indexes:
+        excerpt = "\n".join(
+            lines[index]
+            for index in sorted(selected_indexes)
+        )
+    else:
+        # When deterministic evidence is limited, provide only a small
+        # beginning-of-program fallback rather than the entire source.
+        excerpt = source[:limit]
+
+    return excerpt[:limit]
+
+
+def _build_user_input(
+    source: str,
+    grounded: GroundedConclusion,
+) -> str:
+    excerpt = _build_relevant_excerpt(source, grounded)
+
+    evidence = [
+        {
+            "type": item.type,
+            "value": item.value,
+            "statement": item.statement,
+        }
+        for item in grounded.evidence[:12]
+    ]
 
     payload = {
         "deterministic_conclusion": grounded.conclusion,
         "deterministic_confidence": grounded.confidence,
-        "evidence_values": evidence_values,
-        "uncertainty": grounded.uncertainty,
-        "source_code": source[:source_char_limit],
-        "source_truncated_for_local_ai": len(source) > source_char_limit,
+        "evidence": evidence,
+        "uncertainty": grounded.uncertainty[:4],
+        "relevant_code_excerpt": excerpt,
+        "excerpt_is_partial": len(excerpt) < len(source),
     }
 
     return (
-        "Analyze the following evidence and ABAP source. "
-        "Produce concise structured enrichment only.\n\n"
+        "Explain the supplied deterministic ABAP analysis. "
+        "Do not redo the static analysis. "
+        "Return only the two requested concise summaries.\n\n"
         + json.dumps(payload, indent=2)
     )
 
 
 def _safe_base_url() -> str:
-    return os.getenv("OLLAMA_BASE_URL", DEFAULT_OLLAMA_URL).strip().rstrip("/")
+    return os.getenv(
+        "OLLAMA_BASE_URL",
+        DEFAULT_OLLAMA_URL,
+    ).strip().rstrip("/")
 
 
 def _model_name() -> str:
-    return os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL).strip()
+    return os.getenv(
+        "OLLAMA_MODEL",
+        DEFAULT_OLLAMA_MODEL,
+    ).strip()
 
 
-def _request_ollama(base_url: str, request_payload: dict) -> httpx.Response:
-    timeout = httpx.Timeout(90.0, connect=5.0)
+def _request_ollama(
+    base_url: str,
+    request_payload: dict,
+) -> httpx.Response:
+    timeout = httpx.Timeout(
+        connect=5.0,
+        read=35.0,
+        write=10.0,
+        pool=5.0,
+    )
+
+    started = time.monotonic()
+    generated_parts: list[str] = []
+
     with httpx.Client(timeout=timeout) as client:
-        return client.post(f"{base_url}/api/generate", json=request_payload)
+        with client.stream(
+            "POST",
+            f"{base_url}/api/generate",
+            json=request_payload,
+        ) as response:
+
+            if response.status_code >= 400:
+                response.read()
+                response.raise_for_status()
+
+            for line in response.iter_lines():
+
+                if time.monotonic() - started > MAX_AI_SECONDS:
+                    raise httpx.ReadTimeout(
+                        "Local AI exceeded the generation budget.",
+                        request=response.request,
+                    )
+
+                if not line:
+                    continue
+
+                event = json.loads(line)
+
+                if event.get("error"):
+                    raise RuntimeError(
+                        f"Ollama error: {event['error']}"
+                    )
+
+                piece = event.get("response", "")
+                if piece:
+                    generated_parts.append(piece)
+
+                if event.get("done"):
+                    break
+
+            raw_output = "".join(generated_parts).strip()
+
+            if not raw_output:
+                raise RuntimeError(
+                    "Ollama returned no generated content."
+                )
+
+            return httpx.Response(
+                200,
+                request=response.request,
+                json={"response": raw_output},
+            )
 
 
-def _explicit_support_text(source: str, grounded: GroundedConclusion) -> str:
+def _explicit_support_text(
+    source: str,
+    grounded: GroundedConclusion,
+) -> str:
     return "\n".join(
         [source, grounded.conclusion]
         + [item.value for item in grounded.evidence]
@@ -95,67 +229,144 @@ def _explicit_support_text(source: str, grounded: GroundedConclusion) -> str:
     ).lower()
 
 
-def _unsupported_scenario_terms(text: str, support_text: str) -> list[str]:
+def _unsupported_scenario_terms(
+    text: str,
+    support_text: str,
+) -> list[str]:
     unsupported: list[str] = []
+
     for label, pattern in _SCENARIO_PATTERNS.items():
-        if re.search(pattern, text, flags=re.IGNORECASE) and not re.search(
-            pattern, support_text, flags=re.IGNORECASE
+        if (
+            re.search(pattern, text, flags=re.IGNORECASE)
+            and not re.search(
+                pattern,
+                support_text,
+                flags=re.IGNORECASE,
+            )
         ):
             unsupported.append(label)
+
     return unsupported
 
 
-def _safe_technical_summary(grounded: GroundedConclusion) -> str:
+def _safe_technical_summary(
+    grounded: GroundedConclusion,
+) -> str:
     values = [item.value for item in grounded.evidence]
+
     if values:
-        return "Static evidence detected: " + "; ".join(values) + "."
-    return "The available static evidence is limited; no scenario-specific technical claim was added."
+        return (
+            "Static evidence detected: "
+            + "; ".join(values)
+            + "."
+        )
+
+    return (
+        "The available static evidence is limited; "
+        "no scenario-specific technical claim was added."
+    )
 
 
-def _safe_business_summary(grounded: GroundedConclusion) -> str:
+def _safe_business_summary(
+    grounded: GroundedConclusion,
+) -> str:
     return (
         grounded.conclusion
-        + " The specific business scenario cannot be established from the supplied static evidence."
+        + " The specific business scenario cannot be "
+        "established from the supplied static evidence."
     )
 
 
 def _apply_grounding_guard(
-    parsed: LLMEnrichmentPayload,
+    parsed: LLMSummaryPayload,
     source: str,
     grounded: GroundedConclusion,
-) -> tuple[LLMEnrichmentPayload, bool, list[str]]:
-    """Post-validate scenario claims so prompt failure does not become product output."""
-    support_text = _explicit_support_text(source, grounded)
-    notes: list[str] = []
+) -> tuple[LLMSummaryPayload, bool, list[str]]:
+
+    support_text = _explicit_support_text(
+        source,
+        grounded,
+    )
 
     technical_unsupported = _unsupported_scenario_terms(
-        parsed.technical_summary, support_text
+        parsed.technical_summary,
+        support_text,
     )
+
     business_unsupported = _unsupported_scenario_terms(
-        parsed.business_summary, support_text
+        parsed.business_summary,
+        support_text,
     )
-    unsupported = sorted(set(technical_unsupported + business_unsupported))
+
+    unsupported = sorted(
+        set(
+            technical_unsupported
+            + business_unsupported
+        )
+    )
 
     if not unsupported:
-        return parsed, False, notes
+        return parsed, False, []
 
     guarded = parsed.model_copy(deep=True)
-    guarded.technical_summary = _safe_technical_summary(grounded)
-    guarded.business_summary = _safe_business_summary(grounded)
 
-    scenario_unknown = (
-        "The exact goods-movement scenario (for example receipt, issue, transfer, "
-        "or adjustment) is not established by the supplied static evidence."
+    guarded.technical_summary = (
+        _safe_technical_summary(grounded)
     )
-    if scenario_unknown not in guarded.unknowns:
-        guarded.unknowns.append(scenario_unknown)
 
-    notes.append(
-        "Grounding guard removed unsupported scenario-specific interpretation: "
+    guarded.business_summary = (
+        _safe_business_summary(grounded)
+    )
+
+    note = (
+        "Grounding guard removed unsupported "
+        "scenario-specific interpretation: "
         + ", ".join(unsupported)
         + "."
     )
-    return guarded, True, notes
+
+    return guarded, True, [note]
+
+
+def _build_change_considerations(
+    grounded: GroundedConclusion,
+) -> list[str]:
+    considerations: list[str] = []
+
+    if any(
+        item.type == "database_operation"
+        for item in grounded.evidence
+    ):
+        considerations.append(
+            "Review detected database access and its "
+            "performance and authorization implications before changes."
+        )
+
+    if any(
+        item.type == "function_module"
+        for item in grounded.evidence
+    ):
+        considerations.append(
+            "Review detected function-module interfaces, "
+            "return handling, and transaction boundaries before changes."
+        )
+
+    if any(
+        item.type in {"include", "submit", "transaction"}
+        for item in grounded.evidence
+    ):
+        considerations.append(
+            "Inspect detected downstream dependencies "
+            "and regression-test affected execution paths."
+        )
+
+    if not considerations:
+        considerations.append(
+            "Review the deterministic evidence and "
+            "regression-test affected code paths before changes."
+        )
+
+    return considerations[:3]
 
 
 def enrich_with_ai(
@@ -163,6 +374,7 @@ def enrich_with_ai(
     grounded: GroundedConclusion,
     requested: bool,
 ) -> AIAnalysis:
+
     model = _model_name()
 
     if not requested:
@@ -178,54 +390,93 @@ def enrich_with_ai(
         )
 
     base_url = _safe_base_url()
-    schema = LLMEnrichmentPayload.model_json_schema()
+    schema = LLMSummaryPayload.model_json_schema()
 
     request_payload = {
         "model": model,
         "system": SYSTEM_INSTRUCTIONS,
-        "prompt": _build_user_input(source, grounded),
+        "prompt": _build_user_input(
+            source,
+            grounded,
+        ),
         "format": schema,
-        "stream": False,
-        "options": {"temperature": 0,
-                   "num_predict":400,
-                    
-                   },
+        "stream": True,
+        "keep_alive": "10m",
+        "options": {
+            "temperature": 0,
+            "num_predict": 220,
+        },
     }
 
     try:
-        response = _request_ollama(base_url, request_payload)
+        response = _request_ollama(
+            base_url,
+            request_payload,
+        )
+
         response.raise_for_status()
 
         body = response.json()
         raw_output = body.get("response", "")
-        if not raw_output.strip():
-            raise RuntimeError("Ollama returned an empty response.")
 
-        parsed = LLMEnrichmentPayload.model_validate_json(raw_output)
-        parsed, guard_applied, grounding_notes = _apply_grounding_guard(
-            parsed, source, grounded
+        if not raw_output.strip():
+            raise RuntimeError(
+                "Ollama returned an empty response."
+            )
+
+        parsed = LLMSummaryPayload.model_validate_json(
+            raw_output
         )
 
-        allowed_evidence = {item.value for item in grounded.evidence}
-        safe_used_evidence = [
-            value for value in parsed.used_evidence if value in allowed_evidence
+        (
+            parsed,
+            guard_applied,
+            grounding_notes,
+        ) = _apply_grounding_guard(
+            parsed,
+            source,
+            grounded,
+        )
+
+        evidence_values = [
+            item.value
+            for item in grounded.evidence
         ]
 
-        message = "Local AI enrichment completed with evidence-grounded structured output."
+        message = (
+            "Local AI enrichment completed with "
+            "evidence-grounded structured output."
+        )
+
         if guard_applied:
-            message += " A deterministic grounding guard corrected an unsupported interpretation."
+            message += (
+                " A deterministic grounding guard "
+                "corrected an unsupported interpretation."
+            )
 
         return AIAnalysis(
             requested=True,
             available=True,
             provider="ollama-local",
             model=model,
-            technical_summary=parsed.technical_summary,
-            business_summary=parsed.business_summary,
-            change_considerations=parsed.change_considerations,
-            unknowns=parsed.unknowns,
-            used_evidence=safe_used_evidence,
-            grounding_guard_applied=guard_applied,
+            technical_summary=(
+                parsed.technical_summary
+            ),
+            business_summary=(
+                parsed.business_summary
+            ),
+            change_considerations=(
+                _build_change_considerations(
+                    grounded
+                )
+            ),
+            unknowns=list(
+                grounded.uncertainty
+            ),
+            used_evidence=evidence_values,
+            grounding_guard_applied=(
+                guard_applied
+            ),
             grounding_notes=grounding_notes,
             message=message,
         )
@@ -237,31 +488,59 @@ def enrich_with_ai(
             provider="ollama-local",
             model=model,
             message=(
-                "Local AI unavailable: OpenSAP Copilot could not reach Ollama at "
-                f"{base_url}. Start Ollama and retry. Deterministic analysis remains valid."
+                "Local AI unavailable: OpenSAP Copilot "
+                "could not reach Ollama at "
+                f"{base_url}. Start Ollama and retry. "
+                "Deterministic analysis remains valid."
+            ),
+        )
+
+    except httpx.TimeoutException:
+        return AIAnalysis(
+            requested=True,
+            available=False,
+            provider="ollama-local",
+            model=model,
+            message=(
+                "Local AI enrichment exceeded the "
+                "60-second demo latency budget; "
+                "deterministic analysis remains valid."
             ),
         )
 
     except httpx.HTTPStatusError as exc:
         status = exc.response.status_code
+
         detail = ""
+
         try:
-            detail = exc.response.json().get("error", "")
+            detail = (
+                exc.response.json().get(
+                    "error",
+                    "",
+                )
+            )
         except Exception:
             detail = ""
 
         if status == 404:
             message = (
-                f"Ollama is reachable, but model '{model}' was not found. "
-                f"Run: ollama pull {model}. Deterministic analysis remains valid."
+                f"Ollama is reachable, but model "
+                f"'{model}' was not found. "
+                f"Run: ollama pull {model}. "
+                "Deterministic analysis remains valid."
             )
         else:
             message = (
-                f"Local AI request failed with Ollama HTTP {status}. "
+                f"Local AI request failed with "
+                f"Ollama HTTP {status}. "
                 "Deterministic analysis remains valid."
             )
+
             if detail:
-                message += f" Ollama: {detail[:180]}"
+                message += (
+                    f" Ollama: {detail[:180]}"
+                )
 
         return AIAnalysis(
             requested=True,
@@ -278,7 +557,9 @@ def enrich_with_ai(
             provider="ollama-local",
             model=model,
             message=(
-                "Local AI enrichment failed; deterministic analysis remains valid. "
-                f"Local provider error: {type(exc).__name__}"
+                "Local AI enrichment failed; "
+                "deterministic analysis remains valid. "
+                f"Local provider error: "
+                f"{type(exc).__name__}"
             ),
         )

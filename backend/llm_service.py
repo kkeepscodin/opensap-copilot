@@ -34,7 +34,7 @@ Rules:
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:3b"
-DEFAULT_SOURCE_CHAR_LIMIT = 12000
+DEFAULT_SOURCE_CHAR_LIMIT = 4000
 
 # Scenario terms that are too specific to infer from a generic BAPI alone.
 _SCENARIO_PATTERNS = {
@@ -187,7 +187,8 @@ def enrich_with_ai(
         "format": schema,
         "stream": False,
         "options": {"temperature": 0,
-                   "num_predict":400,
+                   "num_predict":180,
+                    "num_ctx":4096,
                    },
     }
 

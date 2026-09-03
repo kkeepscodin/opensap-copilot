@@ -160,7 +160,7 @@ def _request_ollama(
 ) -> httpx.Response:
     timeout = httpx.Timeout(
         connect=5.0,
-        read=35.0,
+        read=70.0,
         write=10.0,
         pool=5.0,
     )

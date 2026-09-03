@@ -34,23 +34,14 @@ class RiskItem(BaseModel):
     description: str
 
 
-class LLMEnrichmentPayload(BaseModel):
+
+   class LLMSummaryPayload(BaseModel):
     technical_summary: str = Field(
-        description="Concise technical summary grounded only in provided code/evidence."
+        description="One or two concise technical sentences grounded only in supplied evidence."
     )
     business_summary: str = Field(
-        description="Business-language explanation without unsupported SAP assumptions."
+        description="One or two concise business-language sentences without unsupported assumptions."
     )
-    change_considerations: list[str] = Field(
-        description="Potential areas a developer should inspect before changing the code."
-    )
-    unknowns: list[str] = Field(
-        description="Important facts that cannot be established from the supplied evidence."
-    )
-    used_evidence: list[str] = Field(
-        description="Exact evidence values supplied to the model that support the summaries."
-    )
-
 
 class AIAnalysis(BaseModel):
     requested: bool

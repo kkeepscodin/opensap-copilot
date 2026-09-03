@@ -56,7 +56,7 @@ Structured JSON
 Results dashboard
 ```
 
-See [docs/architecture.md](docs/architecture.md).
+See [architecture.md](architecture.md).
 
 ## Current Scope
 
@@ -101,14 +101,14 @@ Only synthetic, anonymized, or explicitly permitted sample code may be committed
 - [x] Define product vision
 - [x] Lock MVP scope
 - [x] Create public repository
-- [ ] Create backend skeleton
-- [ ] Add health-check endpoint
-- [ ] Add ABAP analysis endpoint
-- [ ] Connect an LLM provider
-- [ ] Build the minimal results UI
+- [x] Create backend skeleton
+- [x] Add health-check endpoint
+- [x] Add ABAP analysis endpoint
+- [x] Connect an LLM provider
+- [x] Build the minimal results UI
 - [ ] Publish demo v0.1
 
-See [docs/roadmap.md](docs/roadmap.md).
+See [roadmap.md](roadmap.md).
 
 ## License
 

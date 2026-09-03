@@ -187,8 +187,8 @@ def enrich_with_ai(
         "format": schema,
         "stream": False,
         "options": {"temperature": 0,
-                   "num_predict":180,
-                    "num_ctx":4096,
+                   "num_predict":400,
+                    
                    },
     }
 

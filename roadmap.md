@@ -1,55 +1,66 @@
 # Roadmap
 
-## Release Goal: v0.1 Demo
+## Current Release — v0.1 Working MVP
 
-Build the smallest impressive version of OpenSAP Copilot.
+OpenSAP Copilot has progressed from an initial prototype into a working local MVP for evidence-grounded SAP ABAP program understanding.
 
-## Milestone 1 — Repository Foundation
+### ✅ Milestone 1 — Repository Foundation
 
-- [x] Create public repository
-- [x] Add MIT license
-- [x] Add `.gitignore`
-- [x] Write README
-- [x] Add vision, architecture, and roadmap
+* Public repository
+* MIT license
+* Git ignore configuration
+* Project README
+* Vision, architecture, and roadmap documentation
 
-## Milestone 2 — Backend Skeleton
+### ✅ Milestone 2 — Backend Foundation
 
-- [ ] Create FastAPI application
-- [ ] Add `GET /health`
-- [ ] Add configuration management
-- [ ] Add error-response model
-- [ ] Add basic tests
+* FastAPI application
+* Health-check endpoint
+* Structured API models
+* Error handling
+* Basic API tests
 
-**Done when:** The backend starts with one command and `/health` returns HTTP 200.
+### ✅ Milestone 3 — Deterministic ABAP Analysis
 
-## Milestone 3 — Analysis Contract
+* ABAP source validation
+* Synthetic ABAP samples
+* Deterministic evidence extraction
+* Structured analysis output
+* Dependency and call-flow identification
 
-- [ ] Define request and response models
-- [ ] Add file validation
-- [ ] Add a synthetic ABAP sample
-- [ ] Add deterministic mock analysis
+### ✅ Milestone 4 — Evidence-Grounded Local AI
 
-**Done when:** A sample file returns valid structured JSON without an AI provider.
+* Local LLM integration
+* Structured model output
+* Evidence-grounded prompting
+* Output validation
+* Graceful fallback when local AI is unavailable
 
-## Milestone 4 — AI Integration
+### ✅ Milestone 5 — Minimal User Interface
 
-- [ ] Add provider interface
-- [ ] Add one provider implementation
-- [ ] Add prompt template
-- [ ] Validate model output
-- [ ] Handle invalid responses
+* ABAP source upload
+* Analysis execution
+* Structured results display
+* Purpose, dependencies, call flow, and risk presentation
 
-## Milestone 5 — Minimal Frontend
+### 🚧 Milestone 6 — v0.1 Public Demo Release
 
-- [ ] Create upload screen
-- [ ] Create loading state
-- [ ] Create results dashboard
-- [ ] Display purpose, tables, call flow, and risks
+* [ ] Add safe product screenshots
+* [ ] Improve installation and quick-start instructions
+* [ ] Publish reproducible evaluation results
+* [ ] Record a short product demo
+* [ ] Document known limitations
+* [ ] Tag `v0.1.0`
 
-## Milestone 6 — Demo Release
+## Next Direction — v0.2
 
-- [ ] Add safe screenshots
-- [ ] Record a 60–90 second demo
-- [ ] Improve installation instructions
-- [ ] Add known limitations
-- [ ] Tag `v0.1.0`
+Potential areas for the next iteration:
+
+* Deeper static ABAP analysis
+* Improved dependency extraction
+* Larger evaluation dataset
+* Better confidence calibration
+* Additional enterprise-code understanding workflows
+* Improved developer-facing UX
+
+The priority remains correctness, grounded analysis, and demonstrable engineering quality rather than feature count.

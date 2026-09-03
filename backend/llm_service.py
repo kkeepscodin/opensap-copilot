@@ -34,7 +34,7 @@ Rules:
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:3b"
-DEFAULT_SOURCE_CHAR_LIMIT = 40000
+DEFAULT_SOURCE_CHAR_LIMIT = 12000
 
 # Scenario terms that are too specific to infer from a generic BAPI alone.
 _SCENARIO_PATTERNS = {
@@ -82,7 +82,7 @@ def _model_name() -> str:
 
 
 def _request_ollama(base_url: str, request_payload: dict) -> httpx.Response:
-    timeout = httpx.Timeout(180.0, connect=5.0)
+    timeout = httpx.Timeout(90.0, connect=5.0)
     with httpx.Client(timeout=timeout) as client:
         return client.post(f"{base_url}/api/generate", json=request_payload)
 
@@ -186,7 +186,9 @@ def enrich_with_ai(
         "prompt": _build_user_input(source, grounded),
         "format": schema,
         "stream": False,
-        "options": {"temperature": 0},
+        "options": {"temperature": 0,
+                   "num_predict":400,
+                   },
     }
 
     try:

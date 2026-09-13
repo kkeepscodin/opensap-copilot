@@ -15,33 +15,86 @@ def find_program_name(source: str) -> str:
         source,
     )
     return match.group(1).upper() if match else "UNKNOWN_PROGRAM"
+def _declared_internal_tables(source: str) -> set[str]:
+    names: set[str] = set()
 
+    patterns = [
+        r"(?im)^\s*(?:DATA\s*:?\s*)?([A-Z0-9_/]+)\s+"
+        r"(?:TYPE|LIKE)\s+(?:(?:STANDARD|SORTED|HASHED)\s+)?TABLE\s+OF\b",
+
+        r"(?im)^\s*(?:DATA\s*:?\s*)?([A-Z0-9_/]+)\s+OCCURS\s+\d+\b",
+
+        r"(?im)^\s*(?:DATA\s*:?\s*)?BEGIN\s+OF\s+"
+        r"([A-Z0-9_/]+)\s+OCCURS\s+\d+\b",
+
+        r"(?i)\b(?:INTO|APPENDING)\s+"
+        r"(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\s+"
+        r"@?DATA\(\s*([A-Z0-9_/]+)\s*\)",
+    ]
+
+    for pattern in patterns:
+        for name in re.findall(pattern, source):
+            names.add(name.upper())
+
+    return names
 
 def extract_tables(source: str) -> list[TableUsage]:
     result: list[TableUsage] = []
     seen: set[tuple[str, str]] = set()
 
+    internal_tables = _declared_internal_tables(source)
+
     patterns = [
-        ("select", r"(?i)\bSELECT\b[\s\S]{0,500}?\bFROM\s+([A-Z0-9_/]+)"),
-        ("insert", r"(?i)\bINSERT\s+([A-Z0-9_/]+)"),
-        ("update", r"(?i)\bUPDATE\s+([A-Z0-9_/]+)"),
-        ("modify", r"(?i)\bMODIFY\s+([A-Z0-9_/]+)"),
-        ("delete", r"(?i)\bDELETE\s+FROM\s+([A-Z0-9_/]+)"),
+        (
+            "select",
+            r"(?i)\bSELECT\b[\s\S]{0,500}?\bFROM\s+([A-Z0-9_/]+)",
+        ),
+        (
+            "insert",
+            r"(?i)\bINSERT\s+([A-Z0-9_/]+)\s+FROM\b",
+        ),
+        (
+            "update",
+            r"(?i)\bUPDATE\s+([A-Z0-9_/]+)",
+        ),
+        (
+            "modify",
+            r"(?i)\bMODIFY\s+([A-Z0-9_/]+)\s+FROM\b",
+        ),
+        (
+            "delete",
+            r"(?i)\bDELETE\s+FROM\s+([A-Z0-9_/]+)",
+        ),
     ]
 
     for operation, pattern in patterns:
         for name in re.findall(pattern, source):
             normalized = name.upper()
+
+            if normalized == "SCREEN":
+                continue
+
+            if (
+                operation in {"insert", "modify"}
+                and normalized in internal_tables
+            ):
+                continue
+
             key = (normalized, operation)
+
             if key in seen:
                 continue
 
             seen.add(key)
+
             result.append(
                 TableUsage(
                     name=normalized,
                     operation=operation,
-                    reason=f"Detected in an ABAP {operation.upper()} statement.",
+                    reason=(
+                        f"Detected in an ABAP "
+                        f"{operation.upper()} database-style statement."
+                    ),
                 )
             )
 
